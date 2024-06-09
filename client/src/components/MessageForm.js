@@ -1,12 +1,15 @@
-import { useEffect, useRef } from 'react';
+/* eslint-disable no-undef */
+import { useEffect, useRef, useState } from 'react';
 import { useMessagesDispatch } from '../contexts/MessagesContext';
 import socket from '../Socket';
-
+import {generateRSA,encryptRSA} from '../algorithm/RSA.js';
+import {generateShares} from '../algorithm/Shamir.js';
 function MessageForm({ fullName }) {
   const textareaRef = useRef(null);
   const emojiRef = useRef(null);
+  const participantRef = useRef(null);
+  const minUnlockRef = useRef(null);
   const dispatch = useMessagesDispatch();
-
   const checkSubmit = (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.keyCode === 13 || e.keyCode === 10)) {
       handleSubmit();
@@ -15,7 +18,7 @@ function MessageForm({ fullName }) {
 
   const handleSubmit = () => {
     let textarea = textareaRef.current;
-
+    
     socket.emit('send message', {
       user: fullName,
       text: textarea.value
@@ -30,6 +33,34 @@ function MessageForm({ fullName }) {
       }
     });
 
+    textarea.value = '';
+  }
+  const handleSecretSubmit= () =>{
+    let textarea = textareaRef.current;
+    let publicKey = localStorage.getItem('publicKey');
+    let encrypted = encryptRSA(textarea,publicKey);
+    socket.emit('send encrypted', {
+      user: fullName,
+      text: encrypted
+    });
+    // let participant = participantRef.value;
+    // let minimum = minUnlockRef.value;
+    // let {shares,p} = generateShares(privateKey,BigInt(participant),BigInt(minimum));
+    // socket.emit('send key', {
+    //   user: fullName,
+    //   text: {shares,p},
+    // });
+      dispatch({
+        type: 'newmessage',
+        message: {
+          type: 'primary',
+          user: fullName,
+          text: "Secret Message Send: " +textarea.value
+        }
+      });
+    
+    
+  
     textarea.value = '';
   }
 
@@ -73,6 +104,12 @@ function MessageForm({ fullName }) {
         </div>
 
         <button className="button is-medium is-paddingless is-white" onClick={handleSubmit}><i className="far fa-paper-plane"></i></button>
+        
+      </div>
+      <div className="column is-2-mobile is-1-tablet is-paddingless">
+        <input type="number" ref={participantRef} className="textarea is-shadowless" rows="2" placeholder="Number of Participant"></input>
+        <input type="number" ref={minUnlockRef} className="textarea is-shadowless" rows="2" placeholder="Minimum Person to Unlock"></input>
+        <button className="button is-medium is-paddingless is-white" onClick={handleSecretSubmit}><i className="far fa-paper-plane"></i>Signature</button>
       </div>
     </>
   );

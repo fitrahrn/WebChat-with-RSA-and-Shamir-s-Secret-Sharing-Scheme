@@ -45,6 +45,16 @@ function ChatArea() {
         }
       })
     }
+    function onNewKey(message) {
+      dispatch({
+        type: 'newmessage',
+        message: {
+          type: 'unlock',
+          user: message.user,
+          text: message.text
+        }
+      })
+    }
 
     // New user
     socket.on('new user', onNewUser);
@@ -55,10 +65,13 @@ function ChatArea() {
     // New message
     socket.on('new message', onNewMessage);
 
+    socket.on('new key', onNewKey);
+
     return () => {
       socket.off('new user', onNewUser);
       socket.off('exit user', onExitUser);
       socket.off('new message', onNewMessage);
+      socket.off('new key', onNewKey);
     }
   }, [dispatch]);
 

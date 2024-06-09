@@ -3,7 +3,10 @@ class User {
     this.id = id;
     this.isLogin = login;
     this.fullname = '';
-
+    this.privateKey = {
+      d : 0n,
+      n : 0n
+    };
   }
   static getOnlineUser() {
     let onlineUser = [];

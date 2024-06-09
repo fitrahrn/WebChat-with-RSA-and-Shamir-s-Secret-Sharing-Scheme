@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import socket from '../Socket';
-
+import {generateRSA,encryptRSA} from '../algorithm/RSA.js';
 function LoginForm({ setLogin, setUserName }) {
   const [fullName, setFullName] = useState('');
   const [loginMessage, setLogingMessage] = useState(null);
-
+  
   const handleLogin = (e) => {
     e.preventDefault();
-
+    let {publicKey,privateKey} = generateRSA();
     // Login
-    socket.emit('login', fullName);
-
+    socket.emit('login', fullName,privateKey);
+    localStorage.setItem('publicKey', publicKey);
     function onCheckUser(isUsing) {
       if (isUsing) {
         setLogingMessage('This username is already in use.');

@@ -1,5 +1,5 @@
 const User = require('./User');
-
+import {decryptRSA} from '../algorithm/RSA.js';
 module.exports = (io) => {
 
   // Connection
@@ -12,7 +12,7 @@ module.exports = (io) => {
     User.users.set(socket.id, connectedUser);
 
     // Login
-    socket.on('login', (fullName) => {
+    socket.on('login', (fullName,privateKey) => {
 
       // Check user
       let isUsing = false;
@@ -28,6 +28,8 @@ module.exports = (io) => {
         let currentUser = User.users.get(socket.id);
         currentUser.isLogin = true;
         currentUser.fullname = fullName;
+        currentUser.privateKey.d = privateKey.d;
+        currentUser.privateKey.n = privateKey.n;
         io.emit('new user', fullName);
       }
 
@@ -37,6 +39,22 @@ module.exports = (io) => {
     socket.on('send message', (message) => {
       socket.broadcast.emit('new message', message);
     });
+    socket.on('send encrypted', (message) => {
+      let user = message.user;
+      let publicKey = 0n;
+      User.users.forEach((key) => {
+        if (key.fullname == user) {
+          publicKey = key.publicKey;
+        }
+      });
+      let decrypted = decryptRSA(message)
+      socket.broadcast.emit('new message', message);
+    });
+    // socket.on('send key', (message) => {
+    //   socket.broadcast.emit('new key', message);
+    // });
+
+
 
     // Disconnect
     socket.on('disconnect', (reason) => {

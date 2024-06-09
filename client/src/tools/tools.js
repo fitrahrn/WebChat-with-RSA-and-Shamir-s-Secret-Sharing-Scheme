@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 function powMod(a, e, m) {
     // h/t https://umaranis.com/2018/07/12/calculate-modular-exponentiation-powermod-in-javascript-ap-n/
     if (m === 1n)
@@ -27,4 +28,29 @@ function modInv(a, m) {
     return b;
 }
 
-module.exports = {powMod };
+function convertMSGtoBigInt(message) {
+  let stringNumber = "";
+  for (let i = 0;i<message.length;i++){
+    let char = message.charAt(i);
+    stringNumber +=char.charCodeAt(0)-32
+  
+  }
+  return BigInt(stringNumber);
+}
+
+function convertBigInttoMSG(number){
+  let bigNumber =number.toString();
+  console.log(bigNumber)
+  let message=""
+  for(let i=0;i<bigNumber.length;i+=2){
+    message +=  String.fromCharCode(Number(bigNumber[i] + bigNumber[i+1])+32)
+  }
+  return message;
+}
+
+let message="Hallo";
+let numMessage = convertMSGtoBigInt(message);
+console.log(numMessage);
+let result = convertBigInttoMSG(numMessage);
+console.log(result)
+//module.exports = {powMod,convertMSGtoBigInt,convertBigInttoMSG };
