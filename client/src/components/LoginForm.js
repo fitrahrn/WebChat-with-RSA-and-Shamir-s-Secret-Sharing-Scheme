@@ -10,7 +10,9 @@ function LoginForm({ setLogin, setUserName }) {
     let {publicKey,privateKey} = generateRSA();
     // Login
     socket.emit('login', fullName,privateKey);
-    localStorage.setItem('publicKey', publicKey);
+    localStorage.setItem('publicKeyE', publicKey.e);
+    localStorage.setItem('publicKeyN', publicKey.n);
+    
     function onCheckUser(isUsing) {
       if (isUsing) {
         setLogingMessage('This username is already in use.');

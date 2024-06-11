@@ -32,14 +32,13 @@ function convertMSGtoBigInt(message) {
   let stringNumber = "";
   for (let i = 0;i<message.length;i++){
     let char = message.charAt(i);
-    let stringChar = char.charCodeAt(0)-27
+    let stringChar = (char.charCodeAt(0)-27)
     if(stringChar<10){
       stringNumber += "0"+ stringChar.toString()
     }
     else{
       stringNumber += stringChar.toString()
     }
-    
   
   }
   return BigInt(stringNumber);
@@ -47,7 +46,6 @@ function convertMSGtoBigInt(message) {
 
 function convertBigInttoMSG(number){
   let bigNumber =number.toString();
-  console.log(bigNumber)
   let message=""
   for(let i=0;i<bigNumber.length;i+=2){
     message +=  String.fromCharCode(Number(bigNumber[i] + bigNumber[i+1])+27)

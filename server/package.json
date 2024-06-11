@@ -22,6 +22,7 @@
   ],
   "private": true,
   "dependencies": {
+    "bigint-crypto-utils": "^3.3.0",
     "cookie-parser": "~1.4.6",
     "debug": "~4.3.4",
     "express": "~4.18.2",

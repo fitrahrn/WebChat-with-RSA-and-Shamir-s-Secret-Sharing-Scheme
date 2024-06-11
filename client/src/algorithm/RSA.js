@@ -1,33 +1,43 @@
+/* eslint-disable no-undef */
 const bigintCryptoUtils = require('bigint-crypto-utils');
-const { powMod } = require('../tools/tools');
+const { powMod ,convertBigInttoMSG,convertMSGtoBigInt} = require('../tools/tools');
 
 const generateRSA = ()=>{
-    let p = bigintCryptoUtils.primeSync(16);
-    let q = bigintCryptoUtils.primeSync(16);
+    let p = bigintCryptoUtils.primeSync(128);
+    let q = bigintCryptoUtils.primeSync(128);
     let n = p*q;
+    
     let tot = (p-1n) * (q-1n)
-    let e = bigintCryptoUtils.primeSync(16);
+    let e = bigintCryptoUtils.primeSync(128);
     while (bigintCryptoUtils.gcd(e,tot) !==1n){
-        e = bigintCryptoUtils.primeSync(16);
+        e = bigintCryptoUtils.primeSync(128);
     }
     let d = powMod(e,-1n,tot);
     let publicKey = {
-        e : e,
-        n : n
+        e : e.toString(),
+        n : n.toString()
     };
     let privateKey = {
-        d : d,
-        n : n
+        d : d.toString(),
+        n : n.toString()
     };
     return {publicKey, privateKey};
 }
 
-const encryptRSA = (plaintext,publicKey)=>{
-    let ciphertext = powMod(plaintext,publicKey.e,publicKey.n);
-    return ciphertext;
+const encryptRSA = (plaintext,publicKeyE,publicKeyN)=>{
+    let ciphertext = powMod(convertMSGtoBigInt(plaintext),BigInt(publicKeyE),BigInt(publicKeyN));
+    return ciphertext.toString();
+}
+const encryptRSAKey = (plaintext,publicKeyE,publicKeyN)=>{
+    let ciphertext = powMod(BigInt(plaintext),BigInt(publicKeyE),BigInt(publicKeyN));
+    return ciphertext.toString();
 }
 const decryptRSA = (ciphertext,privateKey)=>{
-    let plaintext = powMod(ciphertext,privateKey.d,privateKey.n);
+    let plaintext = powMod(BigInt(ciphertext),BigInt(privateKey.d),BigInt(privateKey.n));
+    return convertBigInttoMSG(plaintext);
+}
+const decryptRSAKey = (ciphertext,privateKey)=>{
+    let plaintext = powMod(BigInt(ciphertext),BigInt(privateKey.d),BigInt(privateKey.n));
     return plaintext;
 }
 // let {publicKey,privateKey} = generateRSA();
@@ -36,4 +46,4 @@ const decryptRSA = (ciphertext,privateKey)=>{
 // console.log(ciphertext);
 // let plaintext = decryptRSA(ciphertext,privateKey);
 // console.log(plaintext)
-module.exports = {encryptRSA,decryptRSA,generateRSA };
+module.exports = {encryptRSA,decryptRSA,encryptRSAKey,decryptRSAKey,generateRSA };

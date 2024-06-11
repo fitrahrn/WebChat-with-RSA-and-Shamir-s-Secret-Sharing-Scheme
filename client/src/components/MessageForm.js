@@ -2,13 +2,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMessagesDispatch } from '../contexts/MessagesContext';
 import socket from '../Socket';
-import {generateRSA,encryptRSA} from '../algorithm/RSA.js';
+import {generateRSA,encryptRSA,encryptRSAKey} from '../algorithm/RSA.js';
 import {generateShares} from '../algorithm/Shamir.js';
 function MessageForm({ fullName }) {
   const textareaRef = useRef(null);
-  const emojiRef = useRef(null);
-  const participantRef = useRef(null);
   const minUnlockRef = useRef(null);
+  const [file,setFile] = useState("");
+  const [fileName, setFileName] = useState("");
   const dispatch = useMessagesDispatch();
   const checkSubmit = (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.keyCode === 13 || e.keyCode === 10)) {
@@ -16,6 +16,17 @@ function MessageForm({ fullName }) {
     }
   }
 
+  const showFile = async (e) => {
+    e.preventDefault()
+    
+    const reader = new FileReader()
+    reader.onload = async (e) => { 
+      setFile(new Uint8Array(e.target.result));
+    };
+    reader.readAsArrayBuffer(e.target.files[0]);
+    setFileName(e.target.files[0].name);
+    
+  }
   const handleSubmit = () => {
     let textarea = textareaRef.current;
     
@@ -37,19 +48,26 @@ function MessageForm({ fullName }) {
   }
   const handleSecretSubmit= () =>{
     let textarea = textareaRef.current;
-    let publicKey = localStorage.getItem('publicKey');
-    let encrypted = encryptRSA(textarea,publicKey);
+    let publicKeyE = localStorage.getItem('publicKeyE');
+    let publicKeyN = localStorage.getItem('publicKeyN');
+    let {publicKey,privateKey} = generateRSA();
+    let encryptedSecret = encryptRSA(textarea.value,publicKey.e,publicKey.n);
+    let stringPrivateKeyD = privateKey.d.toString()
+    let stringPrivateKeyN = privateKey.n.toString() 
+    console.log(privateKey)
+    console.log(encryptedSecret)
+    let keyPartD = []
+    let keyPartN = []
+    keyPartD.push(encryptRSAKey(stringPrivateKeyD.slice(0,stringPrivateKeyD.length/2),publicKeyE,publicKeyN))
+    keyPartD.push(encryptRSAKey(stringPrivateKeyD.slice(stringPrivateKeyD.length/2),publicKeyE,publicKeyN))
+    keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(0,stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
+    keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
     socket.emit('send encrypted', {
       user: fullName,
-      text: encrypted
+      text: encryptedSecret,
+      keyD: keyPartD,
+      keyN: keyPartN
     });
-    // let participant = participantRef.value;
-    // let minimum = minUnlockRef.value;
-    // let {shares,p} = generateShares(privateKey,BigInt(participant),BigInt(minimum));
-    // socket.emit('send key', {
-    //   user: fullName,
-    //   text: {shares,p},
-    // });
       dispatch({
         type: 'newmessage',
         message: {
@@ -63,54 +81,57 @@ function MessageForm({ fullName }) {
   
     textarea.value = '';
   }
-
-  const appendEmoji = (e) => {
-    let emoji = e.target.textContent;
-    const textarea = textareaRef.current;
-    textarea.value += emoji;
+  const handleSecretSubmitFile= () =>{
+    if(file!==""){
+      let stringFile =""
+      let publicKeyE = localStorage.getItem('publicKeyE');
+      let publicKeyN = localStorage.getItem('publicKeyN');
+      let {publicKey,privateKey} = generateRSA();
+      let encryptedSecret = encryptRSA(textarea.value,publicKey.e,publicKey.n);
+      let stringPrivateKeyD = privateKey.d.toString()
+      let stringPrivateKeyN = privateKey.n.toString() 
+      console.log(privateKey)
+      console.log(encryptedSecret)
+      let keyPartD = []
+      let keyPartN = []
+      keyPartD.push(encryptRSAKey(stringPrivateKeyD.slice(0,stringPrivateKeyD.length/2),publicKeyE,publicKeyN))
+      keyPartD.push(encryptRSAKey(stringPrivateKeyD.slice(stringPrivateKeyD.length/2),publicKeyE,publicKeyN))
+      keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(0,stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
+      keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
+      socket.emit('send encrypted file', {
+        user: fullName,
+        text: encryptedSecret,
+        keyD: keyPartD,
+        keyN: keyPartN
+      });
+        dispatch({
+          type: 'newmessage',
+          message: {
+            type: 'primary',
+            user: fullName,
+            text: "Secret Message Send: " +textarea.value
+          }
+        });
+    }
+      
   }
 
-  useEffect(() => {
-    let fragment = document.createDocumentFragment();
-    let emojRange = [[128513, 128591], [128640, 128704]];
-
-    for (let i = 0, length = emojRange.length; i < length; i++) {
-      let range = emojRange[i];
-      for (let x = range[0]; x < range[1]; x++) {
-        let newEmoji = document.createElement('button');
-        newEmoji.className = 'button is-white is-paddingless is-medium'
-        newEmoji.innerHTML = '&#' + x + ';';
-        newEmoji.addEventListener('click', appendEmoji);
-        fragment.appendChild(newEmoji);
-      }
-    }
-
-    emojiRef.current.appendChild(fragment);
-  }, []);
 
   return (
     <>
       <div className="column is-paddingless">
         <textarea ref={textareaRef} autoFocus={true} className="textarea is-shadowless" rows="2" placeholder="Type a message" onKeyDown={checkSubmit}></textarea>
-      </div>
-
-      <div className="column is-2-mobile is-1-tablet is-paddingless">
-
-        <div className="emoji-wrapper">
-          <button className="button is-medium is-paddingless is-white" id="Emoji">
-            <i className="far fa-smile"></i>
-          </button>
-          <div ref={emojiRef} id="EmojiList" className="popover has-background-white"></div>
-        </div>
-
-        <button className="button is-medium is-paddingless is-white" onClick={handleSubmit}><i className="far fa-paper-plane"></i></button>
-        
-      </div>
-      <div className="column is-2-mobile is-1-tablet is-paddingless">
-        <input type="number" ref={participantRef} className="textarea is-shadowless" rows="2" placeholder="Number of Participant"></input>
         <input type="number" ref={minUnlockRef} className="textarea is-shadowless" rows="2" placeholder="Minimum Person to Unlock"></input>
-        <button className="button is-medium is-paddingless is-white" onClick={handleSecretSubmit}><i className="far fa-paper-plane"></i>Signature</button>
+        <input className="button is-medium is-paddingless is-white"type="file" id="uploadFile" name="uploadFile"  onChange={(e) => showFile(e)}/>
       </div>
+
+      <div className="column is-2-mobile is-1-tablet is-paddingless">
+        
+        <button className="button is-medium is-paddingless is-white" onClick={handleSubmit}><i className="far fa-paper-plane"></i></button>
+        <button className="button is-medium is-paddingless is-white" onClick={handleSecretSubmit}><i className="far fa-paper-plane"></i>Secret</button>
+        <button className="button is-medium is-paddingless is-white" onClick={handleSecretSubmitFile}><i className="far fa-paper-plane"></i>Secret File</button>
+      </div>
+        
     </>
   );
 }

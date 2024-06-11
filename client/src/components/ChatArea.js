@@ -55,6 +55,21 @@ function ChatArea() {
         }
       })
     }
+    function onNewShares(message) {
+      dispatch({
+        type: 'newmessage',
+        message: {
+          type: 'unlock',
+          user: message.user,
+          text: message.text,
+          ownShare: message.share,
+          minimum: message.min,
+          n: message.n,
+          p: message.p,
+          t: message.t 
+        }
+      })
+    }
 
     // New user
     socket.on('new user', onNewUser);
@@ -67,13 +82,15 @@ function ChatArea() {
 
     socket.on('new key', onNewKey);
 
+    socket.on('shares '+userName, onNewShares)
+
     return () => {
       socket.off('new user', onNewUser);
       socket.off('exit user', onExitUser);
       socket.off('new message', onNewMessage);
       socket.off('new key', onNewKey);
     }
-  }, [dispatch]);
+  }, [dispatch, userName]);
 
   return (
     <section className="column">

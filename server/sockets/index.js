@@ -1,5 +1,6 @@
 const User = require('./User');
-import {decryptRSA} from '../algorithm/RSA.js';
+const {decryptRSA,decryptRSAKey} = require('../algorithm/RSA.js')
+const {generateShares,constructSecret} = require('../algorithm/Shamir.js')
 module.exports = (io) => {
 
   // Connection
@@ -22,7 +23,6 @@ module.exports = (io) => {
         }
       });
       socket.emit('check user', isUsing);
-
       // Add User
       if (User.users.has(socket.id) && !isUsing) {
         let currentUser = User.users.get(socket.id);
@@ -41,18 +41,41 @@ module.exports = (io) => {
     });
     socket.on('send encrypted', (message) => {
       let user = message.user;
-      let publicKey = 0n;
+      let privateKey;
+      let size = 0;
       User.users.forEach((key) => {
         if (key.fullname == user) {
-          publicKey = key.publicKey;
+          privateKey = key.privateKey;
         }
+        size++;
       });
-      let decrypted = decryptRSA(message)
-      socket.broadcast.emit('new message', message);
+      let keyPartD = decryptRSAKey(message.keyD[0],privateKey) + decryptRSAKey(message.keyD[1],privateKey)
+      let keyPartN = decryptRSAKey(message.keyN[0],privateKey) + decryptRSAKey(message.keyN[1],privateKey)
+      console.log("encrypted: "+message.text)
+      let checkPrivateKey = {
+        d : keyPartD,
+        n : keyPartN
+      }
+      console.log(checkPrivateKey)
+      console.log("decrypted: "+ decryptRSA(message.text,checkPrivateKey))
+      let {shares,p} = generateShares(BigInt(keyPartD),BigInt(size),BigInt(size-1))
+      let i=0;
+      
+      User.users.forEach((key) => {
+        if(key.fullname !==""){
+          socket.broadcast.emit('shares '+ key.fullname,{
+            user: message.user,
+            share: shares[i].n,
+            text:message.text,
+            t:shares[i].t,
+            n:keyPartN,
+            p:p.toString(),
+            min: size-1
+          });
+        }
+        i++
+      });
     });
-    // socket.on('send key', (message) => {
-    //   socket.broadcast.emit('new key', message);
-    // });
 
 
 
