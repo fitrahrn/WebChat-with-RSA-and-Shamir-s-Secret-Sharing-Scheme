@@ -33,7 +33,7 @@ function Secondary({ data: { user, text, time } }) {
     </div>
   );
 }
-function Unlock({ data: { user, text,minimum,n,p ,ownShare,t} }) {
+function Unlock({ data: { user, text,minimum,n,p ,ownShare,t, filename} }) {
   const [key,setKey] = useState("");
   const [shares,setShares] = useState([]);
   const [newShares,setNewShares] = useState("");
@@ -91,7 +91,22 @@ function Unlock({ data: { user, text,minimum,n,p ,ownShare,t} }) {
           <p>Decrypt Key= {key.toString()}</p>
           <button className="button" type="button" onClick={() =>  navigator.clipboard.writeText(key)}>Copy Key</button>
         </div> :<div></div> }
-        {message !=="" ? <p>Decrypted Message= {message}</p> :<div></div> }
+        { message !=="" && filename ==="" ? 
+          <p>Decrypted Message= {message}</p> : 
+          message !=="" && filename !=="" ? 
+          <div>
+            <p>Decrypted File= </p>
+            <button onClick={() => {
+              const buffer = Uint8Array.from(message, c => c.charCodeAt(0));
+              const file = new Blob([buffer], { type:"text/plain"});
+              const link = document.createElement("a");
+              link.href = URL.createObjectURL(file);
+              link.download = filename;
+              link.click();
+              }}>Download File
+            </button>
+          </div> :
+          <div></div> }
       </div>
     </div>
   );

@@ -1,6 +1,11 @@
 const bigintCryptoUtils = require('bigint-crypto-utils');
 const { powMod } = require('../tools/tools');
 const generateShares = (secret, participant, minimum )=>{
+    //Menghasilkan pemecahan pada secret menjadi
+    //sejumlah participant
+    //Nilai minimum digunakan untuk menghasilkan
+    //koefisien beserta partisipan minimum untuk
+    //rekonstruksi secret
     let coeff = generateCoeff(minimum-1n)
     let p = bigintCryptoUtils.primeSync(512)
     while (p < secret){
@@ -21,6 +26,7 @@ const generateShares = (secret, participant, minimum )=>{
 }
 
 const generateCoeff = (t)=>{
+    //Melakukan generate list koefisien untuk polinom
     let coeff=[]
     for(let i=0;i<t-1n;i++){
         coeff.push(bigintCryptoUtils.randBetween(1000000n,1n));
@@ -29,8 +35,8 @@ const generateCoeff = (t)=>{
 }
 
 const constructSecret = (shares,p) =>{
+    //Merekonstrusi secret berdasarkan shares dan nilai p
     let secret=0n;
-    
     for(let i=0n;i<shares.length;i++){
         let numerator =1n;
         let denominator = 1n;
@@ -43,7 +49,8 @@ const constructSecret = (shares,p) =>{
             }
         }
         if(denominator<0n) negative=-1n;
-        secret += ((shares[i].n*numerator*negative) % p * powMod(bigintCryptoUtils.abs(denominator),-1n,p))%p
+        secret += ((shares[i].n*numerator*negative) % p * 
+        powMod(bigintCryptoUtils.abs(denominator),-1n,p))%p
 
     }
     return secret % p;

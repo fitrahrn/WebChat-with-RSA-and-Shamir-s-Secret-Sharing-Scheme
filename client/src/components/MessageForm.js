@@ -21,9 +21,9 @@ function MessageForm({ fullName }) {
     
     const reader = new FileReader()
     reader.onload = async (e) => { 
-      setFile(new Uint8Array(e.target.result));
+      setFile(e.target.result)
     };
-    reader.readAsArrayBuffer(e.target.files[0]);
+    reader.readAsText(e.target.files[0])
     setFileName(e.target.files[0].name);
     
   }
@@ -66,7 +66,8 @@ function MessageForm({ fullName }) {
       user: fullName,
       text: encryptedSecret,
       keyD: keyPartD,
-      keyN: keyPartN
+      keyN: keyPartN,
+      filename:""
     });
       dispatch({
         type: 'newmessage',
@@ -83,11 +84,10 @@ function MessageForm({ fullName }) {
   }
   const handleSecretSubmitFile= () =>{
     if(file!==""){
-      let stringFile =""
       let publicKeyE = localStorage.getItem('publicKeyE');
       let publicKeyN = localStorage.getItem('publicKeyN');
       let {publicKey,privateKey} = generateRSA();
-      let encryptedSecret = encryptRSA(textarea.value,publicKey.e,publicKey.n);
+      let encryptedSecret = encryptRSA(file,publicKey.e,publicKey.n);
       let stringPrivateKeyD = privateKey.d.toString()
       let stringPrivateKeyN = privateKey.n.toString() 
       console.log(privateKey)
@@ -98,18 +98,19 @@ function MessageForm({ fullName }) {
       keyPartD.push(encryptRSAKey(stringPrivateKeyD.slice(stringPrivateKeyD.length/2),publicKeyE,publicKeyN))
       keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(0,stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
       keyPartN.push(encryptRSAKey(stringPrivateKeyN.slice(stringPrivateKeyN.length/2),publicKeyE,publicKeyN))
-      socket.emit('send encrypted file', {
+      socket.emit('send encrypted', {
         user: fullName,
         text: encryptedSecret,
         keyD: keyPartD,
-        keyN: keyPartN
+        keyN: keyPartN,
+        filename: fileName
       });
         dispatch({
           type: 'newmessage',
           message: {
             type: 'primary',
             user: fullName,
-            text: "Secret Message Send: " +textarea.value
+            text: "Secret File Send: " +fileName
           }
         });
     }

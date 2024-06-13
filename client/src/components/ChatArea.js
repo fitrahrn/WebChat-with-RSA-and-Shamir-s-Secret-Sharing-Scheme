@@ -66,7 +66,8 @@ function ChatArea() {
           minimum: message.min,
           n: message.n,
           p: message.p,
-          t: message.t 
+          t: message.t ,
+          filename: message.filename
         }
       })
     }

@@ -70,7 +70,8 @@ module.exports = (io) => {
             t:shares[i].t,
             n:keyPartN,
             p:p.toString(),
-            min: size-1
+            min: size-1,
+            filename: message.filename
           });
         }
         i++
